@@ -1,0 +1,235 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\f0\fs24 \cf0 require(ggplot2)\
+require(lsr)\
+require(lm.beta)\
+require(tidyr)\
+require(tibble)\
+require(smacof)\
+require(r2glmm)\
+library(psych) \
+library(tidyverse) \
+library(r2glmm) \
+library(lme4) \
+library(lmerTest)\
+library(car)\
+library(lmtest)\
+\
+#################ASSIGNMENT 1#####################\
+\
+summary(home_sample_1)                ##Creates a summary of the data\
+home_sample_12<-home_sample_1          ##Creates a copy while saving original\
+\
+which(home_sample_1$STAI_trait==3.5)    ##Finds out which participant has a value of 3.5 on STAI_trait\
+home_sample_12$STAI_trait<-replace(home_sample_1$STAI_trait,18, 35) ##Replaces 3.5 with 35\
+summary(home_sample_12)            ##Control if it worked\
+\
+hist(home_sample_12$age)\
+hist(home_sample_12$STAI_trait)\
+hist(home_sample_12$pain_cat)           ##Checking the distribution\
+hist(home_sample_12$mindfulness)\
+hist(home_sample_12$cortisol_serum)\
+hist(home_sample_12$cortisol_saliva)\
+\
+plot(cordata, which=3)\
+ncvTest(cordata)\
+bptest(cordata)\
+coeftest(cordata, vcov=hccm)\
+\
+\
+\
+cordata<-lm(pain ~ age + sex, data=home_sample_12)  ##Regression analysis\
+plot(cordata)     ##Plotting the analysis, looking at residuals etc\
+plot(cordata, which = 4) ##plotting cook's distance\
+\
+cd<-cooks.distance(cordata)\
+cd<-round(cd, 5)             ##to find out how much the scores deviate\
+mean(cd)\
+rev(sort(cd))   \
+\
+home_sample_12[88, ]\
+home_sample_12[74, ]       ##investigating in which variable the participants are influential\
+home_sample_12[28, ]       ##Probably pain\
+\
+summary(home_sample_12$pain)  ##Checking pain for confirmation\
+\
+summary(cordata)    ##Summarizing\
+lm.beta(cordata)    ##getting the standardized beta\
+AIC(cordata)         ##For the AIC\
+confint(cordata, level=.95)  ##Getting confidence intervals\
+\
+cordata2<-lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + ##Regression analysis model 2\
+               cortisol_serum + cortisol_saliva, data=home_sample_12)\
+plot(cordata2)       ##Plotting the analysis, looking at residuals etc\
+\
+ncvTest(cordata2)\
+bptest(cordata2)\
+coeftest(cordata2, vcov=hccm)\
+\
+summary(cordata2)    ##Summarizing\
+lm.beta(cordata2)    ##Standardized beta\
+confint(cordata2, level=.95)    ##Confidence intervals\
+\
+AIC(cordata)     ##AIC for the models\
+AIC(cordata2)\
+\
+anova(cordata, cordata2)  ##ANOVA \
+\
+\
+\
+#################ASSIGNMENT 2###################\
+summary(home_sample_12)\
+\
+which(home_sample_12$household_income<0)  \
+home_sample_12$household_income<-replace(home_sample_1$household_income,49, 4562)\
+\
+hist(home_sample_12$IQ)\
+hist(home_sample_12$weight)       ##Checking the distribution for new variables\
+hist(home_sample_12$household_income)\
+\
+\
+cordata3<-lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + \
+               cortisol_serum + weight + IQ + household_income, \
+             data=home_sample_12)    ##Building new model\
+\
+ncvTest(cordata3)\
+bptest(cordata3)\
+coeftest(cordata3, vcov=hccm)\
+summary(cordata3)\
+\
+mod_back = step(cordata3, direction = "backward")\
+mod_back1<-stepAIC(cordata3, direction = "backward")\
+\
+ncvTest(mod_back)\
+bptest(mod_back)\
+coeftest(mod_back, vcov=hccm)\
+\
+summary(mod_back)\
+lm.beta(mod_back)    ##Standardized beta\
+confint(mod_back, level=.95)    ##Confidence intervals\
+AIC(mod_back)\
+AIC(cordata3)\
+anova(mod_back, cordata3)\
+\
+plot(mod_back)\
+\
+hist(home_sample_2$age)\
+hist(home_sample_2$STAI_trait)\
+hist(home_sample_2$pain_cat)           ##Checking the distribution of new dataset\
+hist(home_sample_2$mindfulness)\
+hist(home_sample_2$cortisol_serum)\
+hist(home_sample_2$cortisol_saliva)\
+hist(home_sample_2$weight)    \
+\
+plot(pred_mod2, which = 4) ##plotting cook's distance\
+\
+pred_mod2<-predict(cordata2, home_sample_2) ##predicting new data with theory-model\
+diff_mod2<-data.frame(cbind(actuals=home_sample_2$pain, predicts=pred_mod2))\
+cor_accuracy_mod2<-cor(diff_mod2)\
+cor_accuracy_mod2 \
+mape_mod2 <- mean(abs((diff_mod2$predicts - diff_mod2$actuals))/diff_mod2$actuals)\
+mape_mod2\
+\
+pred_back<-predict(mod_back, home_sample_2) ##predicting new data with back-reg-model\
+diff_back<-data.frame(cbind(actuals=home_sample_2$pain, predicts=pred_back))\
+cor_accuracy_back<-cor(diff_back)\
+cor_accuracy_back\
+mape_back <- mean(abs((diff_back$predicts - diff_back$actuals))/diff_back$actuals)\
+mape_back\
+\
+##############ASSIGNMENT 3###########################\
+summary(home_sample_3)\
+home_sample_31<-home_sample_3\
+which(home_sample_31$sex=="Female")          ##Overviewing the data and correcting coding misstakes\
+home_sample_31$sex<-replace(home_sample_31$sex, 25, "female")\
+home_sample_31$sex<-droplevels(home_sample_31$sex, "Female")\
+summary(home_sample_31$sex)\
+\
+hist(home_sample_31$age)\
+hist(home_sample_31$STAI_trait)\
+hist(home_sample_31$pain_cat)           ##Checking the distribution\
+hist(home_sample_31$mindfulness)\
+hist(home_sample_31$cortisol_serum)\
+hist(home_sample_31$cortisol_saliva)\
+\
+as3 = lmer(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + ##Building model\
+             cortisol_serum + cortisol_saliva + (1 | hospital), data = home_sample_31)\
+\
+which(cooks.distance(as3)>mean(cooks.distance(as3)*3))\
+home_sample_31[ c(3,  16,  17,  18,  32,  43,  54,  64,  67,  69,  74,  78,\
+                    +                  103, 104, 111, 115), ]\
+\
+r.squaredGLMM(as3) ##r2 for mixed model\
+r2beta(as3, partial = TRUE, method = "sgv", data = home_sample_31)\
+\
+cAIC(as3)$caic\
+AIC(cordata2)    ##Comparing models\
+summary(as3)\
+summary(cordata2)\
+\
+summary(home_sample_4)\
+home_sample_41<-home_sample_4\
+which(home_sample_4$household_income <0)\
+home_sample_4[c(119, 166), ]\
+home_sample_41$household_income<-replace(home_sample_4$household_income, 119, 23346)\
+home_sample_41$household_income<-replace(home_sample_4$household_income, 166, 9250)\
+summary(home_sample_41)\
+\
+home_sample_41$household_income<- as.integer( home_sample_41$household_income)\
+\
+hist(home_sample_41$age)\
+hist(home_sample_41$STAI_trait)\
+hist(home_sample_41$pain_cat)           ##Checking the distribution of new dataset\
+hist(home_sample_41$mindfulness)\
+hist(home_sample_41$cortisol_serum)\
+hist(home_sample_41$cortisol_saliva)\
+\
+pred4<-predict(as3, newdata=home_sample_41, allow.new.levels=TRUE)\
+summary(pred4)\
+head(pred4)\
+cAIC(as3)$caic\
+\
+\
+diff_mod4<-data.frame(cbind(actuals=home_sample_41$pain, predicts=pred4))\
+cor_accuracy_mod4<-cor(diff_mod4)  ##Checking correlation between datasets\
+cor_accuracy_mod4 \
+mape_mod4 <- mean(abs((diff_mod4$predicts - diff_mod4$actuals))/diff_mod4$actuals)\
+mape_mod4\
+\
+ma<-mean(home_sample_41$pain)\
+mb<-mean(pred4)\
+mt<-(ma+mb)*.5\
+RSS<-sum((home_sample_41$pain - pred4)^2)  ##Calculating R squared\
+TSS<-sum((home_sample_41$pain - mt)^2)\
+R2<-1-(RSS/TSS)\
+R2\
+\
+newmodel1<-lmer(pain~pain_cat +(1 | hospital), data=home_sample_31)  ##new random intercept/slope models\
+newmodel2<-lmer(pain~pain_cat +(pain_cat  | hospital), data=home_sample_31)\
+\
+newmod1plot = newmodel1 %>% 		\
+  ggplot() +		\
+    aes(y = pain, x = pain_cat, color = hospital) +		##Plotting random intercept\
+      geom_point(size = 4) +		\
+        geom_smooth(method = "lm", se = F, fullrange=TRUE)	\
+newmod1plot\
+\
+newmod2plot = newmodel2 %>% 		\
+  ggplot() +		\
+    aes(y = pain, x = pain_cat, color = hospital) +		##Plotting random slope\
+      geom_point(size = 4) +		\
+        geom_smooth(method = "lm", se = F, fullrange=TRUE) +		\
+          xlim(-1, 50)+		\
+            geom_hline(yintercept=0)+		\
+              geom_vline(xintercept=0)		\
+newmod2plot\
+\
+anova(newmodel1, newmodel2)\
+cAIC(newmodel1)$caic\
+cAIC(newmodel2)$caic\
+\
+}
